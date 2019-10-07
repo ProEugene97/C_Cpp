@@ -1,0 +1,236 @@
+dist:     trusty    # используем Ubuntu 14.04 Trusty Tahr (а не 12.02 Precise Pangolin)
+sudo:     required  # используем Virtual Machine (а не Docker container)
+
+language: cpp       # на практике разницы между специфичным для C++ окружением
+                    # и, скажем, python -- никакой. Но пусть будет cpp.
+
+os:
+    # будем прогонять CI и на Linux, и на Mac OS X...
+    - linux
+    - osx
+
+compiler:
+    # ... и с помощью GCC, и Clang
+    - gcc
+    - clang
+
+env:
+    # список переменных окружения, влияющих на матрицу сборки:
+    - TARGET_CPU=amd64 BUILD_CONFIGURATION=Debug
+    - TARGET_CPU=amd64 BUILD_CONFIGURATION=Release
+    - TARGET_CPU=x86 BUILD_CONFIGURATION=Debug
+    - TARGET_CPU=x86 BUILD_CONFIGURATION=Release
+
+before_script:
+    - source ci/install-$TRAVIS_OS_NAME.sh
+
+      
+matrix:
+    inclide:
+  # CppCheck
+  #
+  - os: linux
+    env:
+      - TEST="CppCheck"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_CPPCHECK=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make check
+
+  #
+  # Coverity Scan
+  #
+  - os: linux
+    env:
+      - TEST="Coverity Scan"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+      coverity_scan:
+        project:
+          name: "Task1"
+          description: "CI for Task1"
+        notification_email: proj9007@gmail.com
+        build_command_prepend: "cmake -DCMAKE_CXX_COMPILER=g++-6 .."
+        build_command: "make"
+        branch_pattern: master
+    script:
+      - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+
+  #
+  # Codecov
+  #
+  - os: linux
+    env:
+      - TEST="Codecov"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+      - cd ..
+      - bash <(curl -s https://codecov.io/bash)
+
+  #
+  # Coveralls
+  #
+  - os: linux
+    env:
+      - TEST="Coveralls"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - pip install --upgrade --user git+git://github.com/eddyxu/cpp-coveralls.git
+      - cmake -DENABLE_COVERAGE=ON -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+      - cd ..
+      - |
+        coveralls --build-root build --gcov-options '\-lp' \
+          -e build/external \
+          -e build/include \
+          -e build/CMakeFiles/3.8.0 \
+          -e build/CMakeFiles/feature_tests.c \
+          -e build/CMakeFiles/feature_tests.cxx
+  #
+  #
+
+  #
+  # Valgrind
+  #
+  - os: linux
+    env:
+      - TEST="Valgrind"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+          - valgrind
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - ctest -T memcheck
+
+  #
+  # G++ 5
+  #
+  - os: linux
+    env:
+      - TEST="G++ 5"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-5
+          - g++-5
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-5" ..
+      - make
+      - make test
+
+  #
+  # G++ 6
+  #
+  - os: linux
+    env:
+      - TEST="G++ 6"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+        packages:
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_CXX_COMPILER="g++-6" ..
+      - make
+      - make test
+
+  #
+  # Clang 3.8
+  #
+  - os: linux
+    env:
+      - TEST="Clang 3.8"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-3.8
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-3.8 -DCMAKE_CXX_COMPILER=clang++-3.8 ..
+      - make
+      - make test
+
+  #
+  # Clang 3.9
+  #
+  - os: linux
+    env:
+      - TEST="Clang 3.9"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-3.9
+        packages:
+          - clang-3.9
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 ..
+      - make
+      - make test
+
+  #
+  # Clang 4.0
+  #
+  - os: linux
+    env:
+      - TEST="Clang 4.0"
+    addons:
+      apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - llvm-toolchain-trusty-4.0
+        packages:
+          - clang-4.0
+          - gcc-6
+          - g++-6
+    script:
+      - cmake -DCMAKE_C_COMPILER=clang-4.0 -DCMAKE_CXX_COMPILER=clang++-4.0 ..
+      - make
+      - make test            
+       
+
+

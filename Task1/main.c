@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define SIZE 63
-#define BUFF_SIZE 10
+#define SIZE 64
+#define FORMAT_SIZE 10
 
 typedef struct {
-    char title[SIZE + 1];
-    char author[SIZE + 1];
-    char singer[SIZE + 1];
+    char title[SIZE];
+    char author[SIZE];
+    char singer[SIZE];
     int duration;
 } Single;
 
@@ -43,19 +43,20 @@ int author_is_singer(const Single *single) {
 
 #ifndef TESTING
 int main() {
-    char buffer[BUFF_SIZE] = "%";
-    sprintf(buffer + 1, "%i", SIZE);
-    strncat(buffer, "s", 2);
     int n = 0;
     scanf("%d", &n);
     for (int i = 0; i < n; ++i) {
-        Single single;
-        scanf(buffer, &single.title);
-        scanf(buffer, &single.author);
-        scanf(buffer, &single.singer);
-        scanf("%u", &single.duration);
-        if (author_is_singer(&single))
-            print_single(&single);
+        char c[2];
+        fgets(c, 2, stdin);
+        Single *single = (Single *)malloc(sizeof(Single));
+        //Single single;
+        fgets(single->title, SIZE, stdin);
+        fgets(single->author, SIZE, stdin);
+        fgets(single->singer, SIZE, stdin);
+        scanf("%u", &single->duration);
+        if (author_is_singer(single))
+            print_single(single);
+        free(single);
     }
     return  0;
 }
